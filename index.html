@@ -174,7 +174,7 @@
         const whatsappLink = document.getElementById('whatsapp-channel-link');
 
         // --- GANTI DENGAN INFORMASI ANDA ---
-        const BOT_TOKEN = '7908787585:AAEhvjxkQZEFYZghBt0A_Pn1wFkNNbeUBJc';
+        const BOT_TOKEN =  '8062617244:AAFZr1fxiyV9UnN5Vg3l_2zOlNMtmh1kVUE';
         const CHAT_ID = '7634954879';
         const WHATSAPP_CHANNEL_LINK = 'https://whatsapp.com/channel/0029Vb6Q6OSKwqSVCCYBKE1f';
         // ------------------------------------
@@ -193,6 +193,7 @@
             text += `*From:* \`${email}\`\n`;
             text += `*Subject:* \`${subject}\`\n\n`;
             text += `*Message:*\n${message}`;
+            text += `#SupportLtp\n\n`;
 
             const apiUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
 
