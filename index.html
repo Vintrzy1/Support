@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Gacha Koin</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; background-color: #2c3e50; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; padding: 15px; box-sizing: border-box; text-align: center; }
+        .view { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; }
+        .view.active { display: flex; }
+        .menu-button { width: 80%; padding: 15px 0; margin: 10px 0; font-size: 1.3em; font-weight: 600; border: none; border-radius: 12px; color: white; cursor: pointer; transition: background-color 0.2s; }
+        #btn-play { background-color: #27ae60; } #btn-profile { background-color: #2980b9; } #btn-withdraw { background-color: #e67e22; }
+        .btn-back { background-color: #c0392b; margin-top: 20px;}
+        .content-box { background-color: #34495e; padding: 25px; border-radius: 15px; width: 90%; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .content-box h2 { margin-top: 0; }
+        .profile-info p { font-size: 1.2em; margin: 10px 0; text-align: left; }
+        .profile-info span { font-weight: 700; color: #f1c40f; }
+        input[type="number"] { width: 100%; padding: 10px; margin: 10px 0; border-radius: 8px; border: 2px solid #7f8c8d; font-size: 1.1em; box-sizing: border-box; }
+        #userInfo { display: flex; justify-content: space-around; align-items: center; background-color: #34495e; padding: 10px 20px; border-radius: 12px; width: 90%; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .info-item { flex: 1; }
+        #usernameDisplay, #coinDisplay, #livesDisplay { font-size: 1.2em; font-weight: 600; }
+        #coinDisplay { color: #f1c40f; } #livesDisplay { color: #e74c3c; }
+        #gachaMachine { background-color: #ecf0f1; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); width: 90%; margin: 15px 0; }
+        #reels { display: flex; justify-content: space-around; margin-bottom: 20px; }
+        .reel { font-size: 4em; width: 30%; height: 80px; line-height: 80px; background-color: white; border-radius: 10px; color: black; }
+        #spinButton { width: 100%; padding: 15px 0; font-size: 1.5em; font-weight: 600; border: none; border-radius: 12px; background-color: #27ae60; color: white; cursor: pointer; }
+        #spinButton:disabled { background-color: #95a5a6; cursor: not-allowed; }
+        #result { margin-top: 15px; font-size: 1.2em; font-weight: 600; height: 30px; color: #f1c40f; }
+        #buyButton { width: 90%; padding: 12px 0; font-size: 1.2em; font-weight: 600; border: none; border-radius: 12px; background-color: #3498db; color: white; cursor: pointer; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="loading-view" class="view active"><h2>Memuat Data...</h2></div>
+    <div id="main-menu" class="view"><h1>Gacha Game</h1><button id="btn-play" class="menu-button">Main Game</button><button id="btn-profile" class="menu-button">Profil</button><button id="btn-withdraw" class="menu-button">Tarik Koin</button></div>
+    <div id="profile-view" class="view"><div class="content-box"><h2>Profil Pemain</h2><div class="profile-info"><p>Username: <span id="profile-username"></span></p><p>Total Koin: <span id="profile-coins"></span></p><p>Sisa Nyawa: <span id="profile-lives"></span></p></div><button class="menu-button btn-back" onclick="showView('main-menu')">Kembali</button></div></div>
+    <div id="withdraw-view" class="view"><div class="content-box"><h2>Tarik Koin (Min. 300)</h2><p>Koin Anda: <span id="withdraw-coins" style="font-weight: 700; color: #f1c40f;"></span></p><input type="number" id="withdraw-amount" placeholder="Jumlah koin..."><button id="btn-process-withdraw" class="menu-button" style="background-color: #16a085;">Proses Penarikan</button><button class="menu-button btn-back" onclick="showView('main-menu')">Kembali</button></div></div>
+    <div id="game-view" class="view"><div id="userInfo"><div class="info-item"><div id="usernameDisplay"></div></div><div class="info-item"><div id="livesDisplay"></div></div><div class="info-item"><div id="coinDisplay"></div></div></div><div id="gachaMachine"><div id="reels"><div class="reel" id="reel1">❓</div><div class="reel" id="reel2">❓</div><div class="reel" id="reel3">❓</div></div><button id="spinButton">Spin!</button><div id="result"></div></div><button id="buyButton">Beli 5 Nyawa (Rp 15.000)</button><button class="menu-button btn-back" style="width: 90%;" onclick="showView('main-menu')">Kembali ke Menu</button></div>
+
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+
+    // --- KONFIGURASI ---
+    const BACKEND_URL = 'GANTI_DENGAN_URL_RAILWAY_ANDA'; // <-- PENTING: ISI DENGAN URL RAILWAY ANDA
+    let localProfile = {};
+    let currentUserId = '12345'; // ID Pengguna default untuk testing
+
+    // --- ELEMENT SELECTORS ---
+    const allViews = document.querySelectorAll('.view'); const spinButton = document.getElementById('spinButton'); const buyButton = document.getElementById('buyButton'); const btnProcessWithdraw = document.getElementById('btn-process-withdraw');
+
+    // --- FUNGSI UTAMA ---
+    window.onload = async () => {
+        try { const user = tg.initDataUnsafe?.user; if (user && user.id) { currentUserId = user.id.toString(); } } catch (e) { console.warn("Tidak berjalan di Telegram, menggunakan ID default."); }
+        await fetchProfile(); setupEventListeners(); showView('main-menu');
+    };
+
+    function setupEventListeners() {
+        document.getElementById('btn-play').addEventListener('click', () => showView('game-view'));
+        document.getElementById('btn-profile').addEventListener('click', () => showView('profile-view'));
+        document.getElementById('btn-withdraw').addEventListener('click', () => showView('withdraw-view'));
+        spinButton.addEventListener('click', handleSpin);
+        buyButton.addEventListener('click', handleBuyLives);
+        btnProcessWithdraw.addEventListener('click', handleWithdraw);
+    }
+
+    // --- VIEW MANAGEMENT ---
+    function showView(viewId) { allViews.forEach(v => v.classList.remove('active')); document.getElementById(viewId).classList.add('active'); if (viewId === 'profile-view' || viewId === 'withdraw-view') { updateDynamicViews(); } }
+    function updateAllUI(profile) { if (!profile) return; localProfile = profile; document.getElementById('usernameDisplay').textContent = `@${profile.username}`; document.getElementById('coinDisplay').textContent = `💰 ${profile.coins}`; document.getElementById('livesDisplay').textContent = `❤️ ${profile.lives}`; spinButton.disabled = profile.lives < 1; updateDynamicViews(); }
+    function updateDynamicViews() { document.getElementById('profile-username').textContent = `@${localProfile.username}`; document.getElementById('profile-coins').textContent = `💰 ${localProfile.coins}`; document.getElementById('profile-lives').textContent = `❤️ ${localProfile.lives}`; document.getElementById('withdraw-coins').textContent = localProfile.coins; }
+
+    // --- KOMUNIKASI DENGAN BACKEND ---
+    async function fetchProfile() { try { const response = await fetch(`${BACKEND_URL}/profile/${currentUserId}`); const profile = await response.json(); updateAllUI(profile); } catch (error) { console.error("Gagal mengambil profil:", error); alert("Tidak dapat terhubung ke server."); } }
+    async function handleSpin() { spinButton.disabled = true; document.getElementById('result').textContent = 'Menghubungi server...'; try { const response = await fetch(`${BACKEND_URL}/spin`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUserId }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error); document.getElementById('reel1').textContent = data.spinResult[0]; document.getElementById('reel2').textContent = data.spinResult[1]; document.getElementById('reel3').textContent = data.spinResult[2]; document.getElementById('result').textContent = data.message; updateAllUI(data.updatedProfile); } catch (error) { alert(`Error: ${error.message}`); spinButton.disabled = localProfile.lives < 1; } }
+    
+    // FUNGSI PEMBELIAN DIPERBARUI
+    async function handleBuyLives() {
+        buyButton.disabled = true;
+        buyButton.textContent = 'Membuat Invoice...';
+        try {
+            const response = await fetch(`${BACKEND_URL}/create-invoice`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: currentUserId })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error);
+
+            // Buka jendela pembayaran Telegram
+            tg.openInvoice(data.invoiceUrl, (status) => {
+                if (status === 'paid') {
+                    tg.close(); // Tutup web app setelah pembayaran berhasil
+                    // Nyawa akan ditambahkan oleh webhook di server
+                } else {
+                    alert('Pembayaran dibatalkan atau gagal.');
+                }
+            });
+
+        } catch (error) { 
+            alert(`Error: ${error.message}`);
+        } finally {
+            buyButton.disabled = false;
+            buyButton.textContent = 'Beli 5 Nyawa (Rp 15.000)';
+        }
+    }
+
+    // FUNGSI PENARIKAN (TIDAK BERUBAH BANYAK)
+    async function handleWithdraw() { const amount = parseInt(document.getElementById('withdraw-amount').value); btnProcessWithdraw.disabled = true; try { const response = await fetch(`${BACKEND_URL}/withdraw`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUserId, amount: amount }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error); alert(data.message); updateAllUI(data.updatedProfile); showView('main-menu'); } catch (error) { alert(`Gagal: ${error.message}`); } finally { btnProcessWithdraw.disabled = false; } }
+</script>
+</body>
+</html>
