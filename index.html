@@ -44,7 +44,7 @@
     tg.ready();
 
     // --- KONFIGURASI ---
-    const BACKEND_URL = 'GANTI_DENGAN_URL_RAILWAY_ANDA'; // <-- PENTING: ISI DENGAN URL RAILWAY ANDA
+    const BACKEND_URL = 'https://alox-production.up.railway.app'; // <-- PENTING: ISI DENGAN URL RAILWAY ANDA
     let localProfile = {};
     let currentUserId = '12345'; // ID Pengguna default untuk testing
 
@@ -110,4 +110,5 @@
     async function handleWithdraw() { const amount = parseInt(document.getElementById('withdraw-amount').value); btnProcessWithdraw.disabled = true; try { const response = await fetch(`${BACKEND_URL}/withdraw`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUserId, amount: amount }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error); alert(data.message); updateAllUI(data.updatedProfile); showView('main-menu'); } catch (error) { alert(`Gagal: ${error.message}`); } finally { btnProcessWithdraw.disabled = false; } }
 </script>
 </body>
+
 </html>
